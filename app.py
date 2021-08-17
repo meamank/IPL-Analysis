@@ -1,3 +1,4 @@
+from os import write
 import streamlit as st
 import plotly
 import plotly.express as px
@@ -5,58 +6,86 @@ import plotly.graph_objs as go
 import pandas as pd
 import numpy as np
 
-st.title('IPL Batsman Analysis')
-
-st.write('Data used: IPL 2008-2020')
+st.set_page_config(layout="wide")
 
 @st.cache(allow_output_mutation=True)
 
 def load_data(nrows):
       deliveries = pd.read_csv('deliveries.csv', nrows=nrows)
       return deliveries
-
+def load_data2(nrows):
+      matches = pd.read_csv('matches.csv', nrows=nrows)
+      return matches
 # Load 10,000 rows of data into the dataframe.
 deliveries = load_data(193468)
+matches = load_data2(900)
 
+with st.sidebar:
+      st.title('IPL Batsman Analysis')
+      st.write('Data used: IPL 2008-2020')
+      #Selectbox for player
+      player_list = st.selectbox("Select Player", deliveries["batsman"].unique())
 
-#Selectbox for player
-player_list = st.selectbox("Select Player", deliveries["batsman"].unique())
+      # filter by batsman for deliveries dataframe
+      filter_deliveries=(deliveries['batsman']== '{}'.format(player_list))
+      df_deliveries_player=deliveries[filter_deliveries]
 
-# filter by batsman
-filter=(deliveries['batsman']== '{}'.format(player_list))
-df_player=deliveries[filter]
+      # filter by batsman for matches dataframe
+      filter_matches=(matches['player_of_match']== '{}'.format(player_list))
+      df_matches_player=matches[filter_matches]
+      
+      #Total matches played
+      total_matches = df_deliveries_player['id'].nunique()
+      st.write("Matches: {}".format(total_matches))
+      #Total balls played
+      total_balls = df_deliveries_player['ball'].count()
+      st.write("Balls Played: {}".format(total_balls))
+      #Total Runs scored
+      total_runs = df_deliveries_player['batsman_runs'].sum()
+      st.write("Runs: {}".format(total_runs))
+      #Show MOM data
+      mom_value = df_matches_player['player_of_match'].value_counts()
+      try:
+            st.write("Man of the Match: {}" .format(mom_value[0]))
+      except IndexError:
+            st.write('Man of the Match: 0')
 
- # Show data using Pie Chart
-colors = ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
-values = df_player['dismissal_kind'].value_counts()
-labels=df_player['dismissal_kind'].value_counts().index
-fig = go.Figure(data=[go.Pie(labels=labels,values=values,hole=.3)])
-fig.update_traces(hoverinfo='label+percent+value', textinfo='label', textfont_size=16,
+#structure the page
+dismissal_type, runs_contribution = st.columns(2)
+
+with dismissal_type:
+      # Show data using Pie Chart
+      colors = ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600']
+      values = df_deliveries_player['dismissal_kind'].value_counts()
+      labels=df_deliveries_player['dismissal_kind'].value_counts().index
+      fig = go.Figure(data=[go.Pie(labels=labels,values=values,hole=.3)])
+      fig.update_traces(hoverinfo='label+percent+value', textinfo='label', textfont_size=12,
+                              marker=dict(colors=colors, line=dict(color='#000000', width=3)))
+      fig.update_layout(title="Dismissal Type",
+                              titlefont={'size': 24}, )
+
+      #Plot the Pie Chart
+      st.plotly_chart(fig, use_container_width=True)
+
+with runs_contribution:
+      #Ways a batsman scores his runs
+      def count_runs(df_deliveries_player,runs):
+            return len(df_deliveries_player[df_deliveries_player['batsman_runs']==runs])*runs
+
+      count_runs(df_deliveries_player,1)
+      count_runs(df_deliveries_player,2)
+      count_runs(df_deliveries_player,3)
+      count_runs(df_deliveries_player,4)
+      count_runs(df_deliveries_player,6)
+
+      values=[count_runs(df_deliveries_player,1),count_runs(df_deliveries_player,2),count_runs(df_deliveries_player,3),count_runs(df_deliveries_player,4),count_runs(df_deliveries_player,6)]
+      labels=[1,2,3,4,6]
+      fig2 = go.Figure(data=[go.Pie(labels=labels,values=values,hole=.3)])
+      fig2.update_traces(hoverinfo='label+percent', textinfo='label+value', textfont_size=16,
                         marker=dict(colors=colors, line=dict(color='#000000', width=3)))
-fig.update_layout(title="Dismissal Type",
-                        titlefont={'size': 30}, )
+      fig2.update_layout(title="Total runs Distribution",
+                        titlefont={'size': 24},
+                        )
 
-#Plot the Pie Chart
-st.plotly_chart(fig, use_container_width=True)
-
-#Ways a batsman scores his runs
-def count_runs(df_player,runs):
-      return len(df_player[df_player['batsman_runs']==runs])*runs
-
-count_runs(df_player,1)
-count_runs(df_player,2)
-count_runs(df_player,3)
-count_runs(df_player,4)
-count_runs(df_player,6)
-
-values=[count_runs(df_player,1),count_runs(df_player,2),count_runs(df_player,3),count_runs(df_player,4),count_runs(df_player,6)]
-labels=[1,2,3,4,6]
-fig2 = go.Figure(data=[go.Pie(labels=labels,values=values,hole=.3)])
-fig2.update_traces(hoverinfo='label+percent', textinfo='label+value', textfont_size=16,
-                  marker=dict(colors=colors, line=dict(color='#000000', width=3)))
-fig2.update_layout(title="Total runs Distribution",
-                  titlefont={'size': 30},
-                  )
-
-#Plot the Pie Chart
-st.plotly_chart(fig2, use_container_width=True)
+      #Plot the Pie Chart
+      st.plotly_chart(fig2, use_container_width=True)
