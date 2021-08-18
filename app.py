@@ -36,19 +36,19 @@ with st.sidebar:
       
       #Total matches played
       total_matches = df_deliveries_player['id'].nunique()
-      st.write("Matches: {}".format(total_matches))
+      st.markdown("- **Matches: {}**".format(total_matches))
       #Total balls played
       total_balls = df_deliveries_player['ball'].count()
-      st.write("Balls Played: {}".format(total_balls))
+      st.markdown("- **Balls Played: {}**".format(total_balls))
       #Total Runs scored
       total_runs = df_deliveries_player['batsman_runs'].sum()
-      st.write("Runs: {}".format(total_runs))
+      st.markdown("- **Runs: {}**".format(total_runs))
       #Show MOM data
       mom_value = df_matches_player['player_of_match'].value_counts()
       try:
-            st.write("Man of the Match: {}" .format(mom_value[0]))
+            st.markdown("- **Man of the Match: {}**" .format(mom_value[0]))
       except IndexError:
-            st.write('Man of the Match: 0')
+            st.markdown('- **Man of the Match: 0**')
 
 #structure the page
 dismissal_type, runs_contribution = st.columns(2)
@@ -89,3 +89,14 @@ with runs_contribution:
 
       #Plot the Pie Chart
       st.plotly_chart(fig2, use_container_width=True)
+# Number of matches played against each teams
+number_of_matches = df_deliveries_player.groupby(['bowling_team'])['id'].nunique().reset_index().rename(columns={'bowling_team':'Team', 'id':'No. of matches'})
+
+#Plot the chart
+values = df_deliveries_player.groupby(['bowling_team'])['id'].nunique()
+labels=df_deliveries_player.groupby(['bowling_team'])['id'].nunique().index
+fig3 = px.bar(number_of_matches, x='Team', y='No. of matches')
+fig3.update_layout(title="Number of matches played against each team",
+                        titlefont={'size': 24},
+                        )
+st.plotly_chart(fig3, use_container_width=True)
