@@ -89,13 +89,15 @@ with runs_contribution:
 
       #Plot the Pie Chart
       st.plotly_chart(fig2, use_container_width=True)
+
 # Number of matches played against each teams
 number_of_matches = df_deliveries_player.groupby(['bowling_team'])['id'].nunique().reset_index().rename(columns={'bowling_team':'Team', 'id':'No. of matches'})
-
+number_of_matches = number_of_matches.sort_values(by='No. of matches',ascending=True)
 #Plot the chart
 values = df_deliveries_player.groupby(['bowling_team'])['id'].nunique()
 labels=df_deliveries_player.groupby(['bowling_team'])['id'].nunique().index
-fig3 = px.bar(number_of_matches, x='Team', y='No. of matches')
+fig3 = px.bar(number_of_matches, x='Team', y='No. of matches', 
+                                                            hover_data=['Team', 'No. of matches'], color='No. of matches',)
 fig3.update_layout(title="Number of matches played against each team",
                         titlefont={'size': 24},
                         )
